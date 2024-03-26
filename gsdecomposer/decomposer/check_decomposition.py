@@ -5,6 +5,7 @@ import string
 
 import numpy as np
 import torch
+import matplotlib
 import matplotlib.pyplot as plt
 from QGrain.models import Dataset, UDMResult
 from QGrain.distributions import GeneralWeibull
@@ -34,7 +35,7 @@ other_sections = ("WN19", "YB19", "HKG", "BS", "HX", "WB1")
 test_loess_sections = ("LX", "NLK", "CMG", "Osh", "BSK", "FS18")
 selected_sections = ("LX", "NLK", "BSK", "FS18", "HKG", "HX")
 all_sections = training_loess_sections + other_sections + test_loess_sections + selected_sections
-experiment_id = 8
+experiment_id = 13
 filenames = ("performance_training_sets_1", "performance_training_sets_2",
              "performance_test_sets", "performance_selected_sets")
 for i, section in enumerate(all_sections):
@@ -94,6 +95,18 @@ for i, section in enumerate(all_sections):
                     f"{string.ascii_uppercase[n]}",
                     transform=ax.transAxes,
                     size=10, weight="bold")
+        if i//6 == 0 or i//6 == 2:
+            handles = [matplotlib.patches.Rectangle([0, 0], 1, 1, color=cmap(i)) for i in range(3)]
+            labels = [f"C{i+1}" for i in range(3)]
+            axes_2.legend(handles, labels,
+                          loc="lower center", bbox_to_anchor=(1.0, -0.75),
+                          ncols=3, prop={"size": 6}, columnspacing=20.0)
+        else:
+            handles = [matplotlib.patches.Rectangle([0, 0], 1, 1, color=cmap(i)) for i in range(5)]
+            labels = [f"C{i + 1}" for i in range(5)]
+            axes_2.legend(handles, labels,
+                          loc="lower center", bbox_to_anchor=(1.0, -0.75),
+                          ncols=5, prop={"size": 6}, columnspacing=10.0)
         os.makedirs("./figures/decomposer", exist_ok=True)
         plt.savefig(f"./figures/decomposer/{filenames[i//6]}.svg")
         plt.savefig(f"./figures/decomposer/{filenames[i//6]}.eps")

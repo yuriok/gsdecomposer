@@ -40,7 +40,6 @@ if __name__ == "__main__":
     decomposer_parameters = get_statistical_parameters(decomposer_dataset)
     all_parameters = np.concatenate([clp_udm_parameters, aca_udm_parameters], axis=0)
 
-
     def plot_density(parameters, i_component, extent):
         x = parameters[:, i_component, 0]
         y = parameters[:, i_component, 1]
@@ -61,9 +60,11 @@ if __name__ == "__main__":
         suffix = "$" if i_component == 0 else f"_{i_component}$"
         axes.set_xlabel(r"$Mz" + suffix + " (ϕ)")
         axes.set_ylabel(r"$So" + suffix)
+        return cfset
 
     n_components = LOESS_N_COMPONENTS
     plt.figure(figsize=(6.6, 6.6))
+    cfset = None
     for i_components in range(n_components + 1):
         extent = _get_extent(all_parameters[:, i_components, 0], all_parameters[:, i_components, 1])
         plt.subplot(n_components + 1, 3, i_components * 3 + 1)
@@ -73,7 +74,7 @@ if __name__ == "__main__":
         plot_density(aca_udm_parameters, i_components, extent)
         plt.title(f"ACA - {'Overall' if i_components == 0 else f'C{i_components}'}")
         plt.subplot(n_components + 1, 3, i_components * 3 + 3)
-        plot_density(decomposer_parameters, i_components, extent)
+        cfset = plot_density(decomposer_parameters, i_components, extent)
         plt.title(f"CLP with GANs - {'Overall' if i_components == 0 else f'C{i_components}'}")
 
     plt.tight_layout()
@@ -82,6 +83,8 @@ if __name__ == "__main__":
                 f"{string.ascii_uppercase[n]}",
                 transform=ax.transAxes,
                 size=10, weight="bold")
+    cax = plt.axes((0.1, -0.01, 0.8, 0.01))
+    plt.colorbar(cfset, cax=cax, orientation="horizontal", label="Sample density")
     plt.savefig(f"./figures/decomposer/comparison_density_contours.svg")
     plt.savefig(f"./figures/decomposer/comparison_density_contours.eps")
     plt.close()

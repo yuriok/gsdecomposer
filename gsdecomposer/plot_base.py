@@ -6,6 +6,7 @@ import numpy as np
 
 import matplotlib.pyplot as plt
 from matplotlib import font_manager
+from matplotlib.ticker import AutoMinorLocator, MultipleLocator, LogLocator
 import scienceplots
 
 from QGrain.utils import get_image_by_proportions
@@ -93,12 +94,13 @@ def plot_components(
         axes.fill_between(
             classes, lower[i] * 100, upper[i] * 100,
             color=light_colors[i], lw=0.02, zorder=-10 + i)
-        axes.plot(classes, mean[i] * 100, color=colors[i], zorder=-10 + i)
+        axes.plot(classes, mean[i] * 100, color=colors[i], label=f"C{i+1}", zorder=-10 + i)
     axes.set_xscale("log")
     axes.set_xlim(*xlim)
     axes.set_ylim(*ylim)
     axes.set_xticks(xticks, [str(tick) for tick in xticks])
     axes.set_yticks(yticks, [str(tick) for tick in yticks])
+    axes.xaxis.set_minor_locator(LogLocator(10, "auto"))
     axes.set_xlabel(xlabel)
     axes.set_ylabel(ylabel)
     axes.set_title(title)

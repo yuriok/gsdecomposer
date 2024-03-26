@@ -2,6 +2,7 @@ import os
 import pickle
 import string
 
+import matplotlib.lines
 import numpy as np
 import matplotlib.pyplot as plt
 from QGrain.models import Dataset, UDMResult
@@ -58,6 +59,7 @@ for i, section in enumerate(sections + selected_sections):
     axes_2 = plt.subplot(6, 3, 2 + (i % 6) * 3)
     plot_components(axes_2, dataset.classes, proportions_udm, components_udm,
                     xlim=xlim, xticks=xticks, title=section)
+
     axes_3 = plt.subplot(6, 3, 3 + (i % 6) * 3)
     plot_proportions(axes_3, proportions_udm, title=section)
     if i % 6 == 5:
@@ -67,6 +69,18 @@ for i, section in enumerate(sections + selected_sections):
                     f"{string.ascii_uppercase[n]}",
                     transform=ax.transAxes,
                     size=10, weight="bold")
+        if i//6 < 2:
+            handles = [matplotlib.patches.Rectangle([0, 0], 1, 1, color=cmap(i)) for i in range(3)]
+            labels = [f"C{i+1}" for i in range(3)]
+            axes_2.legend(handles, labels,
+                          loc="lower center", bbox_to_anchor=(0.5, -0.75),
+                          ncols=3, prop={"size": 6}, columnspacing=20.0)
+        else:
+            handles = [matplotlib.patches.Rectangle([0, 0], 1, 1, color=cmap(i)) for i in range(5)]
+            labels = [f"C{i + 1}" for i in range(5)]
+            axes_2.legend(handles, labels,
+                          loc="lower center", bbox_to_anchor=(0.5, -0.75),
+                          ncols=5, prop={"size": 6}, columnspacing=10.0)
         os.makedirs("./figures/udm", exist_ok=True)
         plt.savefig(f"./figures/udm/results_{i//6+1}.svg")
         plt.savefig(f"./figures/udm/results_{i//6+1}.eps")

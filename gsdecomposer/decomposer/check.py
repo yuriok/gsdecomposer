@@ -30,9 +30,13 @@ loess_sections = ("GJP", "BGY", "YB19",
 train_sections = ("GJP", "BGY", "YB19", "YC",
                   "LC", "TC", "WN19", "BL")
 
-experiment_ids = [1, 2, 3, 4, 5, 6, 7, 8]
-
-
+experiment_ids = list(range(1, 17))
+training_sizes = [512, 1024, 2048, 4096,
+                  16384, 28672, 53248, 102400, 200704, 397312,
+                  16384, 28672, 53248, 102400, 200704, 397312]
+labels = ["512", "1024", "2048", "4096",
+          "16 k", "28 k", "52 k", "100 k", "196 k", "388 k",
+          "16 k", "28 k", "52 k", "100 k", "196 k", "388 k"]
 def m(x, w=100):
     return pd.Series(x).rolling(w).mean().to_numpy()
 
@@ -83,28 +87,53 @@ for experiment_id in experiment_ids:
     _errors = np.concatenate(_errors, axis=0)
     validate_errors.append(_errors)
 
-plt.figure(figsize=(4.4, 2.2))
+plt.figure(figsize=(6.6, 3.3))
 plt.subplot(1, 2, 1)
-plt.hlines(np.mean([all_errors[section]["udm"] for section in loess_sections if section in train_sections]),
+plt.hlines(np.median([all_errors[section]["udm"] for section in loess_sections if section in train_sections]),
            0, experiment_ids[-1] + 1, colors="red")
-plt.boxplot(train_errors, labels=experiment_ids, showfliers=False)
-plt.xlim(0.5, experiment_ids[-1]+0.5)
-plt.xticks(experiment_ids, [f"#{i}" for i in experiment_ids], minor=False)
+bplot1 = plt.boxplot(train_errors[:4], labels=labels[:4], positions=experiment_ids[:4], vert=True, patch_artist=True, showfliers=False)
+bplot2 = plt.boxplot(train_errors[4:-6], labels=labels[4:-6], positions=experiment_ids[4:-6], vert=True, patch_artist=True, showfliers=False)
+bplot3 = plt.boxplot(train_errors[-6:], labels=labels[4:-6], positions=experiment_ids[4:-6], vert=True, patch_artist=True, showfliers=False)
+for patch in bplot1['boxes']:
+    patch.set_facecolor("lightgreen")
+for patch in bplot2['boxes']:
+    patch.set_facecolor("pink")
+for patch in bplot3['boxes']:
+    patch.set_facecolor("lightblue")
+for bplot in (bplot1, bplot2, bplot3):
+    for median in bplot['medians']:
+        median.set_color("red")
+plt.xlim(0.5, experiment_ids[:-6][-1]+0.5)
+# plt.xticks(experiment_ids[:-6], [f"#{i}\n(n={n})" for i, n in zip(experiment_ids[:-6], training_sizes[:-6])], minor=False)
 plt.xticks([], minor=True)
-plt.xlabel("Experiment")
+plt.xlabel("Training set size")
 plt.ylabel("LMSE")
-plt.title("Training sets")
+plt.title("Decomposer performances on training sets")
+plt.legend([bplot1["boxes"][0], bplot2["boxes"][0], bplot3["boxes"][0]],
+           ["No generator", "One generator", "All generators"],
+           loc="upper right", prop={"size": 6})
 
 plt.subplot(1, 2, 2)
-plt.boxplot(validate_errors, labels=experiment_ids, showfliers=False)
-plt.hlines(np.mean([all_errors[section]["udm"] for section in loess_sections if section not in train_sections]),
-           0, experiment_ids[-1] + 1, colors="red")
-plt.xlim(0.5, experiment_ids[-1]+0.5)
-plt.xticks(experiment_ids, [f"#{i}" for i in experiment_ids], minor=False)
+plt.hlines(np.median([all_errors[section]["udm"] for section in loess_sections if section not in train_sections]),
+           0, experiment_ids[:-6][-1] + 1, colors="red")
+bplot1 = plt.boxplot(validate_errors[:4], labels=labels[:4], positions=experiment_ids[:4], vert=True, patch_artist=True, showfliers=False)
+bplot2 = plt.boxplot(validate_errors[4:-6], labels=labels[4:-6], positions=experiment_ids[4:-6], vert=True, patch_artist=True, showfliers=False)
+bplot3 = plt.boxplot(validate_errors[-6:], labels=labels[4:-6], positions=experiment_ids[4:-6], vert=True, patch_artist=True, showfliers=False)
+for patch in bplot1['boxes']:
+    patch.set_facecolor("lightgreen")
+for patch in bplot2['boxes']:
+    patch.set_facecolor("pink")
+for patch in bplot3['boxes']:
+    patch.set_facecolor("lightblue")
+for bplot in (bplot1, bplot2, bplot3):
+    for median in bplot['medians']:
+        median.set_color("red")
+plt.xlim(0.5, experiment_ids[:-6][-1]+0.5)
+# plt.xticks(experiment_ids[:-6], [f"#{i}" for i in experiment_ids[:-6]], minor=False)
 plt.xticks([], minor=True)
-plt.xlabel("Experiment")
+plt.xlabel("Training set size")
 plt.ylabel("LMSE")
-plt.title("Test sets")
+plt.title("Decomposer performances on test sets")
 
 plt.tight_layout()
 for n, ax in enumerate(plt.gcf().axes):

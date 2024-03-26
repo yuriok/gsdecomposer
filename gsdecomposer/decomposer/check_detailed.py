@@ -37,8 +37,13 @@ loess_sections = ("GJP", "BGY", "YB19",
 fluvial_sections = ("HKG", "BS")
 lake_delta_sections = ("HX", "WB1")
 testing_sections = ("FS18", "LX", "BSK", "CMG", "NLK", "Osh")
-experiment_ids = [1, 2, 3, 4, 5, 6, 7, 8]
-
+experiment_ids = list(range(1, 17))
+training_sizes = [512, 1024, 2048, 4096,
+                  16384, 28672, 53248, 102400, 200704, 397312,
+                  16384, 28672, 53248, 102400, 200704, 397312]
+labels = ["512", "1024", "2048", "4096",
+          "16 k", "28 k", "52 k", "100 k", "196 k", "388 k",
+          "16 k", "28 k", "52 k", "100 k", "196 k", "388 k"]
 
 def m(x, w=100):
     return pd.Series(x).rolling(w).mean().to_numpy()
@@ -87,7 +92,7 @@ def lmse(x, y):
 #     plt.show()
 
 
-plt.figure(figsize=(6.6, 8.8))
+plt.figure(figsize=(10.0, 15.0))
 i_subplot = 1
 for section in sections:
     if section in loess_sections:
@@ -104,7 +109,7 @@ for section in sections:
     udm_proportions = torch.from_numpy(udm_dataset._proportions)
     udm_components = torch.from_numpy(udm_dataset._components)
     udm_distributions = torch.squeeze(udm_proportions @ udm_components, dim=1)
-    udm_error = torch.mean(lmse(udm_distributions, measured_distributions))
+    udm_error = torch.median(lmse(udm_distributions, measured_distributions))
     errors = []
     for experiment_id in experiment_ids:
         path = os.path.join(ROOT_DIR, facies, str(experiment_id), "checkpoints", "500000.pkl")
@@ -116,16 +121,34 @@ for section in sections:
         errors.append(error.detach().cpu().numpy())
     plt.subplot(6, 3, i_subplot)
     plt.hlines(udm_error, 0, experiment_ids[-1] + 1, colors="red")
-    plt.boxplot(errors, labels=experiment_ids, showfliers=False)
-    plt.xlim(0.5, experiment_ids[-1]+0.5)
-    plt.xticks(experiment_ids, [f"#{i}" for i in experiment_ids], minor=False)
+    bplot1 = plt.boxplot(errors[:4], labels=labels[:4], positions=experiment_ids[:4], vert=True,
+                         patch_artist=True, showfliers=False)
+    bplot2 = plt.boxplot(errors[4:-6], labels=labels[4:-6], positions=experiment_ids[4:-6], vert=True,
+                         patch_artist=True, showfliers=False)
+    bplot3 = plt.boxplot(errors[-6:], labels=labels[4:-6], positions=experiment_ids[4:-6], vert=True,
+                         patch_artist=True, showfliers=False)
+    for patch in bplot1['boxes']:
+        patch.set_facecolor("lightgreen")
+    for patch in bplot2['boxes']:
+        patch.set_facecolor("pink")
+    for patch in bplot3['boxes']:
+        patch.set_facecolor("lightblue")
+    for bplot in (bplot1, bplot2, bplot3):
+        for median in bplot['medians']:
+            median.set_color("red")
+    plt.xlim(0.5, experiment_ids[:-6][-1] + 0.5)
+    # plt.xticks(experiment_ids[:-6], [f"#{i}\n(n={n})" for i, n in zip(experiment_ids[:-6], training_sizes[:-6])], minor=False)
     plt.xticks([], minor=True)
-    plt.xlabel("Experiment")
+    plt.xlabel("Training set size")
     plt.ylabel("LMSE")
     if section in testing_sections:
         plt.title(section, weight="bold")
     else:
         plt.title(section)
+    if i_subplot == 1:
+        plt.legend([bplot1["boxes"][0], bplot2["boxes"][0], bplot3["boxes"][0]],
+                   ["No generator", "One generator", "All generators"],
+                   loc="upper right", prop={"size": 6})
     i_subplot += 1
 
 plt.tight_layout()
